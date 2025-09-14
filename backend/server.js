@@ -16,14 +16,14 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// Rate limiting - more lenient for development
+// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // More lenient in development
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === '/health' // Skip rate limiting for health checks
+  skip: (req) => req.path === '/health'
 });
 app.use(limiter);
 
@@ -51,6 +51,7 @@ app.use(morgan('combined'));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
 app.get('/', (req, res) => {
   res.send('Backend is running');
 });
@@ -73,19 +74,16 @@ app.use((req, res) => {
 // Initialize database and start server
 const startServer = async () => {
   try {
-    // Connect to MongoDB
     await connectDB();
 
-    // Seed database with test data (only in development)
     if (process.env.NODE_ENV === 'development') {
       await seedDatabase();
     }
 
     console.log('Database connected successfully');
-
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1); // Exit the process if DB connection fails
+    throw error; // Don't exit process on Vercel
   }
 };
 
