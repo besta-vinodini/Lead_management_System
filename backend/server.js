@@ -23,16 +23,17 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === '/health';
-  }
+  skip: (req) => req.path === '/health' // Skip rate limiting for health checks
 });
 app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: ['https://lead-management-system-beta-ten.vercel.app', 'http://localhost:3001', 'http://127.0.0.1:3000'],
+  origin: [
+    'https://lead-management-system-beta-ten.vercel.app',
+    'http://localhost:3001',
+    'http://127.0.0.1:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
@@ -51,10 +52,9 @@ app.use(morgan('combined'));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
-app.get("/", (req, res) => {
-  res.send("Backend is running");
+app.get('/', (req, res) => {
+  res.send('Backend is running');
 });
-
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -76,13 +76,21 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectDB();
-    
+
     // Seed database with test data (only in development)
     if (process.env.NODE_ENV === 'development') {
       await seedDatabase();
     }
+
+    console.log('Database connected successfully');
+
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1); // Exit the process if DB connection fails
+  }
 };
 
 startServer();
 
 module.exports = app;
+
