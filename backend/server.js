@@ -52,7 +52,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+  res.send("Backend is running");
 });
 
 
@@ -81,17 +81,6 @@ const startServer = async () => {
     if (process.env.NODE_ENV === 'development') {
       await seedDatabase();
     }
-    
-    const PORT = config.PORT;
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${config.NODE_ENV}`);
-      console.log(`MongoDB URI: ${config.MONGODB_URI}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
 };
 
 startServer();
