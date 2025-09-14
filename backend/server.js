@@ -51,6 +51,10 @@ app.use(morgan('combined'));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
+
 
 // API routes
 app.use('/api/auth', authRoutes);
