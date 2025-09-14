@@ -1,0 +1,24 @@
+{
+  "name": "lead-management-system",
+  "version": "1.0.0",
+  "description": "Lead Management System - Full Stack Application",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "seed": "cd backend && npm run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "keywords": [
+    "lead-management",
+    "react",
+    "express",
+    "fullstack"
+  ],
+  "author": "",
+  "license": "ISC"
+}
+
