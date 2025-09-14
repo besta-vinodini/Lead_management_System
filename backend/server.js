@@ -32,7 +32,7 @@ app.use(limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: ['https://lead-management-system-beta-ten.vercel.app/', 'http://localhost:3001', 'http://127.0.0.1:3000'],
+  origin: ['https://lead-management-system-beta-ten.vercel.app', 'http://localhost:3001', 'http://127.0.0.1:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
