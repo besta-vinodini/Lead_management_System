@@ -27,8 +27,8 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS configuration
-app.use(cors({
+
+const corsOptions = {
   origin: [
     'https://lead-management-system-beta-ten.vercel.app',
     'http://localhost:3000'
@@ -37,7 +37,11 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
   optionsSuccessStatus: 200
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // 👈 Add this line to handle preflight requests
+
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
