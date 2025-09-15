@@ -19,20 +19,40 @@ app.use(helmet());
 // Rate limiting - more lenient for development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // More lenient in development
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === '/health';
-  }
+  skip: (req) => req.path === '/health' // Skip rate limiting for health checks
 });
 app.use(limiter);
 
+// ------------------
 // CORS configuration
+// ------------------
+const defaultOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'https://lead-management-system-beta-ten.vercel.app'
+];
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : defaultOrigins;
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      console.warn(`Blocked CORS request from origin: ${origin}`);
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
@@ -58,7 +78,7 @@ app.use('/api/leads', leadRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('Error:', err.message || err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
@@ -70,22 +90,22 @@ app.use((req, res) => {
 // Initialize database and start server
 const startServer = async () => {
   try {
-    // Connect to MongoDB
     await connectDB();
-    
+
     // Seed database with test data (only in development)
     if (process.env.NODE_ENV === 'development') {
       await seedDatabase();
     }
-    
-    const PORT = config.PORT;
+
+    const PORT = config.PORT || 5000;
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${config.NODE_ENV}`);
-      console.log(`MongoDB URI: ${config.MONGODB_URI}`);
+      console.log(`✅ Server running on port ${PORT}`);
+      console.log(`🌍 Environment: ${config.NODE_ENV}`);
+      console.log(`📦 MongoDB URI: ${config.MONGODB_URI}`);
+      console.log(`🔐 Allowed Origins: ${allowedOrigins.join(', ')}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 };
