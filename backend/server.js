@@ -22,7 +22,7 @@ app.use(helmet());
 // Rate limiting
 // ---------------------
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, 
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
@@ -47,9 +47,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
     if (!origin) return callback(null, true);
-
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
@@ -85,8 +83,6 @@ app.get("/", (req, res) => {
   res.json({ message: "Backend running!", origin: allowedOrigins });
 });
 
-
-
 // ---------------------
 // API routes
 // ---------------------
@@ -108,22 +104,16 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-
 // ---------------------
-// Initialize DB
+// Run locally only
 // ---------------------
-const startServer = async () => {
-  try {
-    await connectDB();
-
-    // Seed DB only in development
-    if (process.env.NODE_ENV === 'development') {
-      await seedDatabase();
-    }
-
-    if (process.env.VERCEL) {
-      console.log("⚡ Running on Vercel serverless environment");
-    } else {
+if (!process.env.VERCEL) {
+  const startServer = async () => {
+    try {
+      await connectDB();
+      if (process.env.NODE_ENV === 'development') {
+        await seedDatabase();
+      }
       const PORT = config.PORT || 5000;
       app.listen(PORT, () => {
         console.log(`✅ Server running on port ${PORT}`);
@@ -131,14 +121,15 @@ const startServer = async () => {
         console.log(`📦 MongoDB URI: ${config.MONGODB_URI}`);
         console.log(`🔐 Allowed Origins: ${allowedOrigins.join(', ')}`);
       });
+    } catch (error) {
+      console.error('❌ Failed to start server:', error);
+      process.exit(1);
     }
-  } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-  }
-};
+  };
+  startServer();
+}
 
-startServer();
-
-
+// ---------------------
+// Export for Vercel
+// ---------------------
 module.exports = app;
