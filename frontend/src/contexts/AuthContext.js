@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://leadbackend.vercel.app/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://leadbackend.vercel.app/api";
 
 // Configure axios to include cookies
 axios.defaults.withCredentials = true;
