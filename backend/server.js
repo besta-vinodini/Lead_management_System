@@ -13,23 +13,27 @@ const config = require('./config');
 
 const app = express();
 
+// ---------------------
 // Security middleware
+// ---------------------
 app.use(helmet());
 
-// Rate limiting - more lenient for development
+// ---------------------
+// Rate limiting
+// ---------------------
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => req.path === '/health' // Skip rate limiting for health checks
+  skip: (req) => req.path === '/health'
 });
 app.use(limiter);
 
-// ------------------
+// ---------------------
 // CORS configuration
-// ------------------
+// ---------------------
 const defaultOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -43,13 +47,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (mobile apps, curl, Postman, etc.)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
-      console.warn(`Blocked CORS request from origin: ${origin}`);
+      console.warn(`🚫 Blocked CORS request from origin: ${origin}`);
       return callback(new Error('Not allowed by CORS'));
     }
   },
@@ -59,40 +63,54 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Body parsing middleware
+// ---------------------
+// Body parsing + cookies
+// ---------------------
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+// ---------------------
 // Logging
+// ---------------------
 app.use(morgan('combined'));
 
-// Health check endpoint
+// ---------------------
+// Health check
+// ---------------------
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// ---------------------
 // API routes
+// ---------------------
 app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
 
-// Error handling middleware
+// ---------------------
+// Error handling
+// ---------------------
 app.use((err, req, res, next) => {
   console.error('Error:', err.message || err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// ---------------------
 // 404 handler
+// ---------------------
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Initialize database and start server
+// ---------------------
+// Initialize DB + start server
+// ---------------------
 const startServer = async () => {
   try {
     await connectDB();
 
-    // Seed database with test data (only in development)
+    // Seed DB only in development
     if (process.env.NODE_ENV === 'development') {
       await seedDatabase();
     }
