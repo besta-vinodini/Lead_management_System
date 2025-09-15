@@ -81,6 +81,11 @@ app.use(morgan('combined'));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+app.get("/", (req, res) => {
+  res.json({ message: "Backend running!", origin: allowedOrigins });
+});
+
+
 
 // ---------------------
 // API routes
@@ -103,8 +108,9 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+
 // ---------------------
-// Initialize DB + start server
+// Initialize DB
 // ---------------------
 const startServer = async () => {
   try {
@@ -115,13 +121,17 @@ const startServer = async () => {
       await seedDatabase();
     }
 
-    const PORT = config.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`✅ Server running on port ${PORT}`);
-      console.log(`🌍 Environment: ${config.NODE_ENV}`);
-      console.log(`📦 MongoDB URI: ${config.MONGODB_URI}`);
-      console.log(`🔐 Allowed Origins: ${allowedOrigins.join(', ')}`);
-    });
+    if (process.env.VERCEL) {
+      console.log("⚡ Running on Vercel serverless environment");
+    } else {
+      const PORT = config.PORT || 5000;
+      app.listen(PORT, () => {
+        console.log(`✅ Server running on port ${PORT}`);
+        console.log(`🌍 Environment: ${config.NODE_ENV}`);
+        console.log(`📦 MongoDB URI: ${config.MONGODB_URI}`);
+        console.log(`🔐 Allowed Origins: ${allowedOrigins.join(', ')}`);
+      });
+    }
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -129,5 +139,6 @@ const startServer = async () => {
 };
 
 startServer();
+
 
 module.exports = app;
