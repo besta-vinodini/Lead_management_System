@@ -36,30 +36,32 @@ app.use(limiter);
 
 
 const defaultOrigins = [
-  'http://localhost:3000',
-  'https://lead-management-system-beta-ten.vercel.app'
+  'https://lead-management-system-beta-ten.vercel.app',
+  'http://localhost:3000'
+  
 ];
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : defaultOrigins;
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (like curl, Postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-  optionsSuccessStatus: 200
-}));
 
+  app.use(cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow Postman, curl
+      if (allowedOrigins.some(o => origin.startsWith(o))) {
+        return callback(null, true);
+      } else {
+        console.error("❌ Blocked by CORS:", origin);
+        return callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+    optionsSuccessStatus: 200
+  }));
+  
 // ---------------------
 // Body parsing + cookies
 // ---------------------
@@ -106,6 +108,13 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
+
+
+app.use((req, res, next) => {
+  console.log("🌍 Request Origin:", req.headers.origin);
+  next();
+});
+
 
 // ---------------------
 // Run locally
