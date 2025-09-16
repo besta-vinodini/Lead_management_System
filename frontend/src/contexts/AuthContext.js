@@ -3,7 +3,14 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+
+// Example login request
+axios.post(`${API_BASE_URL}/auth/login`, {
+  email,
+  password
+});
+
 
 // Configure axios to include cookies
 axios.defaults.withCredentials = true;

@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import './LeadForm.css';
 
-const API_BASE_URL = "http://localhost:5000/api";
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 const LeadForm = () => {
   const [formData, setFormData] = useState({
