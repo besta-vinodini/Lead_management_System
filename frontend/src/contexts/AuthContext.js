@@ -54,52 +54,60 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`,JSON.stringify({ email, password }),{
-        headers: {
-          'Content-Type':'application/json'
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/login`,
+        JSON.stringify({ email, password }),
+        {
+          headers: { "Content-Type": "application/json" },
         }
-      });
+      );
   
-      // ✅ store token in localStorage
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+      console.log("Login response:", response.data); // 🔍 check what backend sends
+  
+      // ✅ store token properly
+      const token = response.data.accessToken || response.data.token;
+      if (token) {
+        localStorage.setItem("token", token);
       }
   
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || "Login failed",
       };
     }
   };
   
-  const register = async (email, password, firstName, lastName) => {
+  const register = async (name, email, password) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/register`, JSON.stringify({
-        email,
-        password,
-        firstName,
-        lastName
-      }),{
-        headers:{
-          'Content-Type':'application/json'
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/register`,
+        JSON.stringify({ name, email, password }),
+        {
+          headers: { "Content-Type": "application/json" },
         }
-      }
       );
   
-      // ✅ store token in localStorage
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+      console.log("Register response:", response.data); // 🔍 check backend response
+  
+      // ✅ Save token if backend returns one
+      const token = response.data.accessToken || response.data.token;
+      if (token) {
+        localStorage.setItem("token", token);
       }
   
-      setUser(response.data.user);
+      // ✅ Set user state if returned
+      if (response.data.user) {
+        setUser(response.data.user);
+      }
+  
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || "Registration failed",
       };
     }
   };
