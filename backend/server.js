@@ -1,6 +1,3 @@
-// ---------------------
-// Imports
-// ---------------------
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,9 +13,8 @@ const config = require('./config');
 
 const app = express();
 
-// ---------------------
+
 // Security middleware
-// ---------------------
 app.use(helmet());
 
 // ---------------------
@@ -107,7 +103,7 @@ app.use((req, res) => {
 });
 
 // ---------------------
-// Run locally only
+// Run locally
 // ---------------------
 if (!process.env.VERCEL) {
   const startServer = async () => {
@@ -120,7 +116,6 @@ if (!process.env.VERCEL) {
       app.listen(PORT, () => {
         console.log(`✅ Server running on http://localhost:${PORT}`);
         console.log(`🌍 Environment: ${config.NODE_ENV}`);
-        // Safer logging: don’t print password
         if (config.MONGODB_URI) {
           try {
             const uri = new URL(config.MONGODB_URI);
@@ -136,9 +131,16 @@ if (!process.env.VERCEL) {
     }
   };
   startServer();
+} else {
+  // ---------------------
+  // Connect DB on Vercel (serverless env)
+  // ---------------------
+  connectDB().catch(err => {
+    console.error("❌ MongoDB connection failed on Vercel:", err);
+  });
 }
 
 // ---------------------
 // Export for Vercel
 // ---------------------
-module.exports = app;
+module.exports = app; 
