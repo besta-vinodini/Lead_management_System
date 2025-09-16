@@ -82,9 +82,19 @@ const LeadForm = () => {
       };
 
       if (isEdit) {
-        await axiosInstance.put(`/leads/${id}`, submitData);
+        await axiosInstance.put(`/leads/${id}`,JSON.stringify(submitData),
+        {
+          headers:{
+            'Content-Type' : 'application/json'
+          }
+        });
       } else {
-        await axiosInstance.post(`/leads`, submitData);
+        await axiosInstance.post(`/leads`, JSON.stringify(submitData),
+        {
+          headers:{
+            'Content-Type': 'application/json'
+          }
+        });
       }
 
       navigate('/dashboard');
