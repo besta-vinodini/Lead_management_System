@@ -33,7 +33,11 @@ app.use(limiter);
 // ---------------------
 // CORS configuration
 // ---------------------
-const defaultOrigins = ['http://localhost:3000'];
+
+const defaultOrigins = [
+  'http://localhost:3000',
+  'https://lead-management-system-beta-ten.vercel.app'
+];
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
@@ -41,19 +45,19 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like curl, Postman)
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // Postman, curl
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'));
     }
+    console.warn(`❌ Blocked by CORS: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
   optionsSuccessStatus: 200
 }));
+
 
 // ---------------------
 // Body parsing + cookies
