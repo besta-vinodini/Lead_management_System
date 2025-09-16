@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
+      console.log("🚀 API Base URL:", API_BASE_URL);
       const response = await axios.get(`${API_BASE_URL}/auth/me`);
       setUser(response.data.user);
     } catch (error) {
