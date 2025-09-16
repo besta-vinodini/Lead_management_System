@@ -52,45 +52,49 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ✅ Login
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, {
-        email,
-        password,
-      });
-      // Save token
-      localStorage.setItem('token', response.data.token);
+      const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
+  
+      // ✅ store token in localStorage
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+  
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Login failed',
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Login failed' 
       };
     }
   };
-
-  // ✅ Register
+  
   const register = async (email, password, firstName, lastName) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/register`, {
         email,
         password,
         firstName,
-        lastName,
+        lastName
       });
-      // Save token
-      localStorage.setItem('token', response.data.token);
+  
+      // ✅ store token in localStorage
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+  
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Registration failed',
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Registration failed' 
       };
     }
   };
+  
 
   // ✅ Logout
   const logout = () => {
