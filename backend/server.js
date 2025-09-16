@@ -13,8 +13,9 @@ const config = require('./config');
 
 const app = express();
 
-
+// ---------------------
 // Security middleware
+// ---------------------
 app.use(helmet());
 
 // ---------------------
@@ -31,51 +32,37 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // ---------------------
-// CORS configuration
+// Allowed origins
 // ---------------------
-
-
-const defaultOrigins = [
-  'https://lead-management-system-beta-ten.vercel.app',
-  'http://localhost:3000'
-  
-];
-
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-  }
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200); // important for preflight requests
-  }
-  next();
-});
-
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : defaultOrigins;
+  : [
+      'https://lead-management-system-beta-ten.vercel.app',
+      'http://localhost:3000'
+    ];
 
+// ---------------------
+// CORS setup
+// ---------------------
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // allow Postman/curl
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      console.error("❌ Blocked by CORS:", origin);
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+}));
 
-  app.use(cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow Postman, curl
-      if (allowedOrigins.some(o => origin.startsWith(o))) {
-        return callback(null, true);
-      } else {
-        console.error("❌ Blocked by CORS:", origin);
-        return callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-    optionsSuccessStatus: 200
-  }));
-  
+// Handle preflight globally
+app.options('*', cors());
+
 // ---------------------
 // Body parsing + cookies
 // ---------------------
@@ -112,6 +99,9 @@ app.use('/api/leads', leadRoutes);
 // Error handling
 // ---------------------
 app.use((err, req, res, next) => {
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: 'CORS not allowed from this origin' });
+  }
   console.error('Error:', err.message || err);
   res.status(500).json({ error: 'Internal server error' });
 });
@@ -123,12 +113,11 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-
+// Debugging: log request origin
 app.use((req, res, next) => {
   console.log("🌍 Request Origin:", req.headers.origin);
   next();
 });
-
 
 // ---------------------
 // Run locally
@@ -171,4 +160,4 @@ if (!process.env.VERCEL) {
 // ---------------------
 // Export for Vercel
 // ---------------------
-module.exports = app; 
+module.exports = app;
