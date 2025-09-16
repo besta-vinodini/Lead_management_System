@@ -1,3 +1,6 @@
+// ---------------------
+// Imports
+// ---------------------
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -22,7 +25,7 @@ app.use(helmet());
 // Rate limiting
 // ---------------------
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
@@ -34,12 +37,7 @@ app.use(limiter);
 // ---------------------
 // CORS configuration
 // ---------------------
-const defaultOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000',
-  'https://lead-management-system-beta-ten.vercel.app'
-];
+const defaultOrigins = ['http://localhost:3000'];
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
@@ -47,11 +45,11 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
   origin: function (origin, callback) {
+    // allow requests with no origin (like curl, Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
-      console.warn(`🚫 Blocked CORS request from origin: ${origin}`);
       return callback(new Error('Not allowed by CORS'));
     }
   },
@@ -79,8 +77,12 @@ app.use(morgan('combined'));
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
-app.get("/", (req, res) => {
-  res.json({ message: "Backend running!", origin: allowedOrigins });
+
+// ---------------------
+// Root route
+// ---------------------
+app.get('/', (req, res) => {
+  res.json({ message: 'Backend running!', allowedOrigins });
 });
 
 // ---------------------
@@ -116,10 +118,17 @@ if (!process.env.VERCEL) {
       }
       const PORT = config.PORT || 5000;
       app.listen(PORT, () => {
-        console.log(`✅ Server running on port ${PORT}`);
+        console.log(`✅ Server running on http://localhost:${PORT}`);
         console.log(`🌍 Environment: ${config.NODE_ENV}`);
-        console.log(`📦 MongoDB URI: ${config.MONGODB_URI}`);
-        console.log(`🔐 Allowed Origins: ${allowedOrigins.join(', ')}`);
+        // Safer logging: don’t print password
+        if (config.MONGODB_URI) {
+          try {
+            const uri = new URL(config.MONGODB_URI);
+            console.log(`📦 MongoDB connected: ${uri.host}${uri.pathname}`);
+          } catch {
+            console.log(`📦 MongoDB URI loaded`);
+          }
+        }
       });
     } catch (error) {
       console.error('❌ Failed to start server:', error);
