@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance'; // ✅ use auth axios instance
 import './LeadForm.css';
-
-
-// API base URL setup
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL ||
-  (process.env.NODE_ENV === "production"
-    ? "https://lead-management-system-bn67.vercel.app/api"
-    : "http://localhost:5000/api");
-
-console.log("🚀 API Base URL (Dashboard):", API_BASE_URL);
-
-
-
 
 const LeadForm = () => {
   const [formData, setFormData] = useState({
@@ -30,12 +17,12 @@ const LeadForm = () => {
     score: 0,
     leadValue: 0,
     lastActivityAt: '',
-    isQualified: false
+    isQualified: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isEdit, setIsEdit] = useState(false);
-  
+
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -48,11 +35,12 @@ const LeadForm = () => {
 
   const fetchLead = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/leads/${id}`);
+      const response = await axiosInstance.get(`/leads/${id}`);
       const lead = response.data;
+
       setFormData({
-        firstName: lead.first_name || '',
-        lastName: lead.last_name || '',
+        firstName: lead.firstName || '',
+        lastName: lead.lastName || '',
         email: lead.email || '',
         phone: lead.phone || '',
         company: lead.company || '',
@@ -61,9 +49,11 @@ const LeadForm = () => {
         source: lead.source || 'website',
         status: lead.status || 'new',
         score: lead.score || 0,
-        leadValue: lead.lead_value || 0,
-        lastActivityAt: lead.last_activity_at ? lead.last_activity_at.slice(0, 16) : '',
-        isQualified: lead.is_qualified || false
+        leadValue: lead.leadValue || 0,
+        lastActivityAt: lead.lastActivityAt
+          ? lead.lastActivityAt.slice(0, 16)
+          : '',
+        isQualified: lead.isQualified || false,
       });
     } catch (error) {
       console.error('Error fetching lead:', error);
@@ -73,9 +63,9 @@ const LeadForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -88,17 +78,18 @@ const LeadForm = () => {
       const submitData = {
         ...formData,
         leadValue: parseFloat(formData.leadValue) || 0,
-        score: parseInt(formData.score) || 0
+        score: parseInt(formData.score) || 0,
       };
 
       if (isEdit) {
-        await axios.put(`${API_BASE_URL}/leads/${id}`, submitData);
+        await axiosInstance.put(`/leads/${id}`, submitData);
       } else {
-        await axios.post(`${API_BASE_URL}/leads`, submitData);
+        await axiosInstance.post(`/leads`, submitData);
       }
 
       navigate('/dashboard');
     } catch (error) {
+      console.error('Error saving lead:', error);
       setError(error.response?.data?.error || 'Error saving lead');
     } finally {
       setLoading(false);
@@ -113,8 +104,9 @@ const LeadForm = () => {
     <div className="lead-form-container">
       <div className="lead-form-card">
         <h2>{isEdit ? 'Edit Lead' : 'Create New Lead'}</h2>
-        
+
         <form onSubmit={handleSubmit}>
+          {/* Row 1 */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="firstName">First Name *</label>
@@ -141,6 +133,7 @@ const LeadForm = () => {
             </div>
           </div>
 
+          {/* Row 2 */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="email">Email *</label>
@@ -166,6 +159,7 @@ const LeadForm = () => {
             </div>
           </div>
 
+          {/* Row 3 */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="company">Company</label>
@@ -190,6 +184,7 @@ const LeadForm = () => {
             </div>
           </div>
 
+          {/* Row 4 */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="state">State</label>
@@ -223,6 +218,7 @@ const LeadForm = () => {
             </div>
           </div>
 
+          {/* Row 5 */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="status">Status</label>
@@ -254,6 +250,7 @@ const LeadForm = () => {
             </div>
           </div>
 
+          {/* Row 6 */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="leadValue">Lead Value ($)</label>
@@ -280,6 +277,7 @@ const LeadForm = () => {
             </div>
           </div>
 
+          {/* Checkbox */}
           <div className="form-group checkbox-group">
             <label>
               <input
@@ -292,14 +290,28 @@ const LeadForm = () => {
             </label>
           </div>
 
+          {/* Error */}
           {error && <div className="error-message">{error}</div>}
 
+          {/* Actions */}
           <div className="form-actions">
-            <button type="button" onClick={handleCancel} className="btn-secondary">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="btn-secondary"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="btn-primary">
-              {loading ? 'Saving...' : (isEdit ? 'Update Lead' : 'Create Lead')}
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary"
+            >
+              {loading
+                ? 'Saving...'
+                : isEdit
+                ? 'Update Lead'
+                : 'Create Lead'}
             </button>
           </div>
         </form>
@@ -309,4 +321,3 @@ const LeadForm = () => {
 };
 
 export default LeadForm;
-

@@ -3,17 +3,26 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
+// API base URL
 const API_BASE_URL =
   process.env.REACT_APP_API_URL ||
-  (process.env.NODE_ENV === "production"
-    ? "https://lead-management-system-bn67.vercel.app/api"
-    : "http://localhost:5000/api");
+  (process.env.NODE_ENV === 'production'
+    ? 'https://lead-management-system-backend-x71s.onrender.com/api'
+    : 'http://localhost:5000/api');
 
-console.log("🚀 API Base URL (Dashboard):", API_BASE_URL);
+// ✅ Create axios instance with token support
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+});
 
-
-// Configure axios to include cookies
-axios.defaults.withCredentials = true;
+// Attach token to every request
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -31,10 +40,10 @@ export const AuthProvider = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  // ✅ Verify user with token
   const checkAuthStatus = async () => {
     try {
-      console.log("🚀 API Base URL:", API_BASE_URL);
-      const response = await axios.get(`${API_BASE_URL}/auth/me`);
+      const response = await axiosInstance.get('/auth/me');
       setUser(response.data.user);
     } catch (error) {
       setUser(null);
@@ -43,48 +52,50 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ Login
   const login = async (email, password) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, {
         email,
-        password
+        password,
       });
+      // Save token
+      localStorage.setItem('token', response.data.token);
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Login failed',
       };
     }
   };
 
+  // ✅ Register
   const register = async (email, password, firstName, lastName) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/register`, {
         email,
         password,
         firstName,
-        lastName
+        lastName,
       });
+      // Save token
+      localStorage.setItem('token', response.data.token);
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Registration failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Registration failed',
       };
     }
   };
 
-  const logout = async () => {
-    try {
-      await axios.post(`${API_BASE_URL}/auth/logout`);
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setUser(null);
-    }
+  // ✅ Logout
+  const logout = () => {
+    localStorage.removeItem('token');
+    setUser(null);
   };
 
   const value = {
@@ -92,7 +103,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    loading
+    loading,
+    axiosInstance, // expose for dashboard/leadForm
   };
 
   return (
