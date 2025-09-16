@@ -54,7 +54,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
+      const response = await axios.post(`${API_BASE_URL}/auth/login`,JSON.stringify({ email, password }),{
+        headers: {
+          'Content-Type':'application/json'
+        }
+      });
   
       // ✅ store token in localStorage
       if (response.data.token) {
@@ -73,12 +77,17 @@ export const AuthProvider = ({ children }) => {
   
   const register = async (email, password, firstName, lastName) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/register`, {
+      const response = await axios.post(`${API_BASE_URL}/auth/register`, JSON.stringify({
         email,
         password,
         firstName,
         lastName
-      });
+      }),{
+        headers:{
+          'Content-Type':'application/json'
+        }
+      }
+      );
   
       // ✅ store token in localStorage
       if (response.data.token) {
