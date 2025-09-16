@@ -1,5 +1,5 @@
+// server.js (replace your existing file)
 const express = require('express');
-const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
@@ -12,6 +12,39 @@ const leadRoutes = require('./routes/leads');
 const config = require('./config');
 
 const app = express();
+
+// ---------------------
+// Allowed origins (env or defaults)
+// ---------------------
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim())
+  : [
+      'https://lead-management-system-beta-ten.vercel.app',
+      'http://localhost:3000'
+    ];
+
+// ---------------------
+// Very early: explicit CORS + preflight handler
+// (placed BEFORE rate limiter and routes so preflight won't be blocked)
+// ---------------------
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    // required CORS response headers
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin'); // helpful for caches
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,X-Requested-With,Accept,Origin');
+  }
+
+  // respond to preflight immediately
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 
 // ---------------------
 // Security middleware
@@ -30,38 +63,6 @@ const limiter = rateLimit({
   skip: (req) => req.path === '/health'
 });
 app.use(limiter);
-
-// ---------------------
-// Allowed origins
-// ---------------------
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : [
-      'https://lead-management-system-beta-ten.vercel.app',
-      'http://localhost:3000'
-    ];
-
-// ---------------------
-// CORS setup (single source of truth)
-// ---------------------
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow Postman/curl
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.error("❌ Blocked by CORS:", origin);
-      return callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // handle preflight
 
 // ---------------------
 // Body parsing + cookies
@@ -96,13 +97,20 @@ app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
 
 // ---------------------
-// Error handling
+// Error handling (include CORS headers on error responses)
 // ---------------------
 app.use((err, req, res, next) => {
-  if (err.message === 'Not allowed by CORS') {
+  // ensure CORS headers are present even when responding with error
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
+  if (err && err.message === 'Not allowed by CORS') {
     return res.status(403).json({ error: 'CORS not allowed from this origin' });
   }
-  console.error('Error:', err.message || err);
+  console.error('Error:', err && (err.stack || err.message || err));
   res.status(500).json({ error: 'Internal server error' });
 });
 
@@ -114,10 +122,10 @@ app.use((req, res) => {
 });
 
 // ---------------------
-// Run locally
+// Local run vs Vercel
 // ---------------------
 if (!process.env.VERCEL) {
-  const startServer = async () => {
+  (async () => {
     try {
       await connectDB();
       if (process.env.NODE_ENV === 'development') {
@@ -127,28 +135,17 @@ if (!process.env.VERCEL) {
       app.listen(PORT, () => {
         console.log(`✅ Server running on http://localhost:${PORT}`);
         console.log(`🌍 Environment: ${config.NODE_ENV}`);
-        if (config.MONGODB_URI) {
-          try {
-            const uri = new URL(config.MONGODB_URI);
-            console.log(`📦 MongoDB connected: ${uri.host}${uri.pathname}`);
-          } catch {
-            console.log(`📦 MongoDB URI loaded`);
-          }
-        }
       });
-    } catch (error) {
-      console.error('❌ Failed to start server:', error);
+    } catch (err) {
+      console.error('❌ Failed to start server:', err);
       process.exit(1);
     }
-  };
-  startServer();
+  })();
 } else {
+  // In Vercel serverless: ensure DB connects
   connectDB().catch(err => {
-    console.error("❌ MongoDB connection failed on Vercel:", err);
+    console.error('❌ MongoDB connection failed on Vercel:', err);
   });
 }
 
-// ---------------------
-// Export for Vercel
-// ---------------------
 module.exports = app;
