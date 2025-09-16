@@ -3,7 +3,14 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://lead-management-system-bn67.vercel.app/api"
+    : "http://localhost:5000/api");
+
+console.log("🚀 API Base URL (Dashboard):", API_BASE_URL);
+
 
 // Configure axios to include cookies
 axios.defaults.withCredentials = true;

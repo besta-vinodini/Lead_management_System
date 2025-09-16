@@ -4,7 +4,17 @@ import axios from 'axios';
 import './LeadForm.css';
 
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+// API base URL setup
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://lead-management-system-bn67.vercel.app/api"
+    : "http://localhost:5000/api");
+
+console.log("🚀 API Base URL (Dashboard):", API_BASE_URL);
+
+
+
 
 const LeadForm = () => {
   const [formData, setFormData] = useState({

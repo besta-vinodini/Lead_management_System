@@ -10,8 +10,11 @@ import './Dashboard.css';
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
-
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://lead-management-system-bn67.vercel.app/api"
+    : "http://localhost:5000/api");
 
 
 // Cell renderer components
