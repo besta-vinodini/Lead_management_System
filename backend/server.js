@@ -42,9 +42,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
     ];
 
 // ---------------------
-// CORS setup
+// CORS setup (single source of truth)
 // ---------------------
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true); // allow Postman/curl
     if (allowedOrigins.includes(origin)) {
@@ -58,10 +58,10 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
   optionsSuccessStatus: 200
-}));
+};
 
-// Handle preflight globally
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // handle preflight
 
 // ---------------------
 // Body parsing + cookies
@@ -113,12 +113,6 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// Debugging: log request origin
-app.use((req, res, next) => {
-  console.log("🌍 Request Origin:", req.headers.origin);
-  next();
-});
-
 // ---------------------
 // Run locally
 // ---------------------
@@ -149,9 +143,6 @@ if (!process.env.VERCEL) {
   };
   startServer();
 } else {
-  // ---------------------
-  // Connect DB on Vercel (serverless env)
-  // ---------------------
   connectDB().catch(err => {
     console.error("❌ MongoDB connection failed on Vercel:", err);
   });
